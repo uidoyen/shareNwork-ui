@@ -3,63 +3,65 @@ import { PageSection, Title } from '@patternfly/react-core';
 import moment from "moment";
 import Timeline from "react-calendar-timeline";
 import generateFakeData from "./utils/randomData";
+import { TimelineKeys } from './constants';
+import 'react-calendar-timeline/lib/Timeline.css';
 
-var keys = {
-  groupIdKey: "id",
-  groupTitleKey: "title",
-  groupRightTitleKey: "rightTitle",
-  itemIdKey: "id",
-  itemTitleKey: "title",
-  itemDivTitleKey: "title",
-  itemGroupKey: "group",
-  itemTimeStartKey: "start",
-  itemTimeEndKey: "end",
-  groupLabelKey: "title"
-};
-
-const RoasterManagement: React.FC = () => {
+const RoasterManagement: React.FC = () => {;
+  const { groups, items } = generateFakeData();
+  const [defaultTimeStart, setDefaultTimeStart] = React.useState(moment().startOf("day").toDate())
+  const [defaultTimeEnd, setDefaultTimeEnd] = React.useState(moment().startOf("day").add(1, "day").toDate())
+  const [resources, setResources] = React.useState(groups);
+  const [candidates, setCandidates] = React.useState(items);
 
   const handleItemMove = (itemId, dragTime, newGroupOrder) => {
-    const { items, groups } = this.state;
+    const group = resources[newGroupOrder];
+    setResources(candidates.map(candidate =>
+      candidate.id === itemId
+        ? Object.assign({}, candidate, {
+            start: dragTime,
+            end: dragTime + (candidate.end - candidate.start),
+            group: group.id
+          })
+        : candidate
+    ))
 
-    const group = groups[newGroupOrder];
-
-    this.setState({
-      items: items.map(item =>
-        item.id === itemId
-          ? Object.assign({}, item, {
-              start: dragTime,
-              end: dragTime + (item.end - item.start),
-              group: group.id
-            })
-          : item
-      )
-    });
 
     console.log("Moved", itemId, dragTime, newGroupOrder);
   };
 
   const handleItemResize = (itemId, time, edge) => {
-    const { items } = this.state;
-
-    this.setState({
-      items: items.map(item =>
-        item.id === itemId
-          ? Object.assign({}, item, {
-              start: edge === "left" ? time : item.start,
-              end: edge === "left" ? item.end : time
-            })
-          : item
-      )
-    });
+    setResources(candidates.map(candidate =>
+      candidate.id === itemId
+        ? Object.assign({}, candidate, {
+            start: edge === "left" ? time : candidate.start,
+            end: edge === "left" ? candidate.end : time
+          })
+        : candidate
+    ));
 
     console.log("Resized", itemId, time, edge);
   };
+
   return (
     <PageSection>
       <Title headingLevel="h1" size="lg">
         Roaster Management
       </Title>
+      <Timeline
+        groups={groups}
+        items={items}
+        keys={TimelineKeys}
+        fullUpdate
+        itemTouchSendsClick={false}
+        stackItems
+        itemHeightRatio={0.75}
+        canMove={true}
+        canResize={"both"}
+        defaultTimeStart={defaultTimeStart}
+        defaultTimeEnd={defaultTimeEnd}
+        onItemMove={handleItemMove}
+        onItemResize={handleItemResize}
+      />
     </PageSection>
   )
 }
